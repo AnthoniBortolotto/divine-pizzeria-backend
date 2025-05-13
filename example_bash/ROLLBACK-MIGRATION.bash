@@ -1,1 +1,0 @@
-migrate -path=internal/database/migrations -database "postgresql://user:password@localhost:5432/pizzeria?sslmode=disable" -verbose down
