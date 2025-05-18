@@ -75,8 +75,10 @@ func (h *PizzaHandler) AddPizzaSize(c *gin.Context) {
 
 		if err != nil && !strings.Contains(err.Error(), "record not found") {
 			println("Error checking name:", err.Error())
-			ch <- RoutineResult{Result: false, Error: errors.New("Failed to check pizza size name")}
+			ch <- RoutineResult{Result: false, Error: errors.New("failed to check pizza size name")}
+			return
 		} else if err != nil && strings.Contains(err.Error(), "record not found") {
+			println("Record not found for name check")
 			ch <- RoutineResult{Result: false, Error: nil}
 			return
 		}
@@ -87,11 +89,13 @@ func (h *PizzaHandler) AddPizzaSize(c *gin.Context) {
 
 	// Check display name
 	go func() {
-		result, _ := h.pizzaSizeRepo.GetPizzaSizeByDisplayName(pizzaSizeBody.DisplayName)
+		result, err := h.pizzaSizeRepo.GetPizzaSizeByDisplayName(pizzaSizeBody.DisplayName)
 		if err != nil && !strings.Contains(err.Error(), "record not found") {
 			println("Error checking display name:", err.Error())
-			ch <- RoutineResult{Result: false, Error: errors.New("Failed to check pizza size display name")}
+			ch <- RoutineResult{Result: false, Error: errors.New("failed to check pizza size display name")}
+			return
 		} else if err != nil && strings.Contains(err.Error(), "record not found") {
+			println("Record not found for display name check")
 			ch <- RoutineResult{Result: false, Error: nil}
 			return
 		}
@@ -103,6 +107,7 @@ func (h *PizzaHandler) AddPizzaSize(c *gin.Context) {
 	// Wait for both checks to complete
 	for i := 0; i < 2; i++ {
 		result := <-ch
+
 		if result.Error != nil {
 			println("Error from goroutine:", result.Error.Error())
 			c.JSON(500, gin.H{

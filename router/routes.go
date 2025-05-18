@@ -1,7 +1,7 @@
 package router
 
 import (
-	customer_routes "divine-pizzeria-backend/modules/customer/v1/routes"
+	auth_routes "divine-pizzeria-backend/modules/auth/v1/routes"
 	order_routes "divine-pizzeria-backend/modules/order/v1/routes"
 	pizza_routes "divine-pizzeria-backend/modules/pizza/v1/routes"
 
@@ -21,8 +21,8 @@ func RegisterRoutes(
 
 	api := router.Group("/api")
 	{
+		auth_routes.RegisterAuthRoutes(api, db)
 		pizza_routes.RegisterPizzaRoutes(api, db)
 		order_routes.RegisterOrderRoutes(api, db)
-		customer_routes.RegisterCustomerRoutes(api, db)
 	}
 }
