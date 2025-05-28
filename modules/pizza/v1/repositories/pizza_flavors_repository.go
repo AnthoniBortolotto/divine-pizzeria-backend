@@ -51,3 +51,12 @@ func (r *PizzaFlavorsRepository) GetPizzaFlavorByName(name string) (pizza_models
 	}
 	return pizzaFlavor, nil
 }
+
+func (r *PizzaFlavorsRepository) GetPizzaFlavorByID(id uint) (pizza_models.PizzaFlavor, error) {
+	var pizzaFlavor pizza_models.PizzaFlavor
+	if err := r.db.Where("id = ?", id).Where("deleted_at IS NULL").First(&pizzaFlavor).Error; err != nil {
+		println("Error fetching pizza flavor by ID:", err)
+		return pizza_models.PizzaFlavor{}, err
+	}
+	return pizzaFlavor, nil
+}

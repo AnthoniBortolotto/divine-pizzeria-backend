@@ -3,7 +3,7 @@ package pizza_models
 import "time"
 
 type PizzaSize struct {
-	ID          int        `json:"id"`
+	ID          uint       `json:"id"`
 	Name        string     `json:"name"`
 	DisplayName string     `json:"display_name"`
 	Price       float64    `json:"price"`

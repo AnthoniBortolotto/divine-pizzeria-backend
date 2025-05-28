@@ -17,7 +17,7 @@ func RegisterOrderRoutes(router *gin.RouterGroup, db *gorm.DB) {
 		order.Use(auth_middleware.AuthMiddleware())
 		{
 			order.GET("/", h.ListOrders)
-			order.POST("/", h.AddOrder)
+			order.POST("/", h.CreateOrder)
 		}
 	}
 }

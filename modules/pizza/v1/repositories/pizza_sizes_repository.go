@@ -44,6 +44,15 @@ func (r *PizzaSizesRepository) GetPizzaSizeByDisplayName(displayName string) (pi
 	return pizzaSize, nil
 }
 
+func (r *PizzaSizesRepository) GetPizzaSizeByID(id uint) (pizza_models.PizzaSize, error) {
+	var pizzaSize pizza_models.PizzaSize
+	if err := r.db.Where("id = ?", id).Where("deleted_at IS NULL").First(&pizzaSize).Error; err != nil {
+		println("Error fetching pizza size by ID:", err)
+		return pizza_models.PizzaSize{}, err
+	}
+	return pizzaSize, nil
+}
+
 func (r *PizzaSizesRepository) CreatePizzaSize(pizzaSize pizza_models.PizzaSizeCreate) (pizza_models.PizzaSize, error) {
 	newPizzaSize := pizza_models.PizzaSize{
 		Name:        pizzaSize.Name,
