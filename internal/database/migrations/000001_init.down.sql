@@ -6,7 +6,7 @@ DROP INDEX IF EXISTS idx_order_items_not_deleted;
 DROP TABLE IF EXISTS order_items;
 
 -- Drop indexes on orders
-DROP INDEX IF EXISTS idx_orders_order_date;
+DROP INDEX IF EXISTS idx_orders_delivery_date;
 DROP INDEX IF EXISTS idx_orders_status;
 DROP INDEX IF EXISTS idx_orders_user_id;
 DROP INDEX IF EXISTS idx_orders_not_deleted;

@@ -92,7 +92,7 @@ WHERE deleted_at IS NULL;
 CREATE TABLE orders (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
-    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    delivery_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     status VARCHAR(20) NOT NULL,
     total_price NUMERIC(10, 2) DEFAULT 0.00 NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -110,7 +110,7 @@ WHERE deleted_at IS NULL;
 CREATE INDEX idx_orders_status ON orders(status)
 WHERE deleted_at IS NULL;
 
-CREATE INDEX idx_orders_order_date ON orders(order_date);
+CREATE INDEX idx_orders_delivery_date ON orders(delivery_date);
 
 -- Create order items table
 CREATE TABLE order_items (
