@@ -3,6 +3,8 @@ package order_helpers
 import (
 	"net/http"
 
+	"divine-pizzeria-backend/constants"
+	auth_models "divine-pizzeria-backend/modules/auth/v1/models"
 	auth_repositories "divine-pizzeria-backend/modules/auth/v1/repositories"
 	order_models "divine-pizzeria-backend/modules/order/v1/models"
 	pizza_models "divine-pizzeria-backend/modules/pizza/v1/models"
@@ -29,25 +31,26 @@ func NewOrderValidator(
 	}
 }
 
-func (v *OrderValidator) ValidateUserPermission(c *gin.Context, permissionID uint) (uint, bool) {
+func (v *OrderValidator) ValidateUserPermission(c *gin.Context, permissionID uint) (*auth_models.User, bool) {
 	// Get user ID from context
 	userID := c.GetUint("user_id")
 
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return 0, false
+		return nil, false
 	}
 	user, err := v.authRepo.GetUserByID(userID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user"})
-		return 0, false
+		return nil, false
 	}
-	if user.RoleID != permissionID {
+
+	if permissionID == constants.ALL_ROLES || user.RoleID != permissionID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to perform this action"})
-		return 0, false
+		return nil, false
 	}
-	return userID, true
+	return user, true
 }
 
 func (v *OrderValidator) CalculateTotalPrice(reqBody order_models.CreateOrderRequest, c *gin.Context) ([]order_models.OrderItem, float64, error) {

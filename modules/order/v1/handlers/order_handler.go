@@ -40,22 +40,28 @@ func NewOrderHandler(db *gorm.DB) *OrderHandler {
 }
 
 func (h *OrderHandler) ListOrders(c *gin.Context) {
-	userID, hasPermission := h.helpers.ValidateUserPermission(c, constants.CUSTOMER_ROLE_ID)
+	_, hasPermission := h.helpers.ValidateUserPermission(c, constants.ADMIN_ROLE_ID)
 
 	if !hasPermission {
+		return
+	}
+
+	orders, err := h.orderRepo.GetAllOrders()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve orders"})
 		return
 	}
 
 	// TODO: Implement order listing with user ID
 	c.JSON(200, gin.H{
 		"message": "List of orders",
-		"user_id": userID,
+		"orders":  orders,
 	})
 }
 
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	// check if user exists
-	userID, hasPermission := h.helpers.ValidateUserPermission(c, constants.CUSTOMER_ROLE_ID)
+	user, hasPermission := h.helpers.ValidateUserPermission(c, constants.CUSTOMER_ROLE_ID)
 
 	if !hasPermission {
 		return
@@ -87,7 +93,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 
 	// Create order
 	order := order_models.Order{
-		UserID:       userID,
+		UserID:       user.ID,
 		Status:       order_models.OrderStatusPending,
 		TotalPrice:   totalAmount,
 		DeliveryDate: reqBody.DeliveryDate,
