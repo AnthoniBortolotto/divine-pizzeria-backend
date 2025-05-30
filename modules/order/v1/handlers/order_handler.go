@@ -3,11 +3,10 @@ package order_handlers
 import (
 	"net/http"
 
-	"divine-pizzeria-backend/constants"
 	auth_repositories "divine-pizzeria-backend/modules/auth/v1/repositories"
 	order_models "divine-pizzeria-backend/modules/order/v1/models"
 	order_repositories "divine-pizzeria-backend/modules/order/v1/repositories"
-	pizza_models "divine-pizzeria-backend/modules/pizza/v1/models"
+	order_validators "divine-pizzeria-backend/modules/order/v1/validators"
 	pizza_repositories "divine-pizzeria-backend/modules/pizza/v1/repositories"
 	utils_validator "divine-pizzeria-backend/utils"
 
@@ -21,6 +20,7 @@ type OrderHandler struct {
 	pizzaSizeRepo   pizza_repositories.PizzaSizesRepository
 	pizzaFlavorRepo pizza_repositories.PizzaFlavorsRepository
 	authRepo        auth_repositories.AuthRepository
+	validator       *order_validators.OrderValidator
 }
 
 func NewOrderHandler(db *gorm.DB) *OrderHandler {
@@ -28,11 +28,14 @@ func NewOrderHandler(db *gorm.DB) *OrderHandler {
 	pizzaSizeRepo := pizza_repositories.NewPizzaSizeRepository(db)
 	pizzaFlavorRepo := pizza_repositories.NewPizzaFlavoursRepository(db)
 	authRepo := auth_repositories.NewAuthRepository(db)
+	validator := order_validators.NewOrderValidator(*authRepo, *pizzaSizeRepo, *pizzaFlavorRepo)
+
 	return &OrderHandler{
 		orderRepo:       *orderRepo,
 		pizzaSizeRepo:   *pizzaSizeRepo,
 		pizzaFlavorRepo: *pizzaFlavorRepo,
 		authRepo:        *authRepo,
+		validator:       validator,
 	}
 }
 
@@ -54,9 +57,7 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 }
 
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
-
 	user_id := c.GetUint("user_id")
-
 	if user_id == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -80,52 +81,18 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	// check if user exists
-
-	user, err := h.authRepo.GetUserByID(user_id)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user"})
-		return
-	}
-	if user.RoleID != constants.CUSTOMER_ROLE_ID {
+	// Validate user
+	userResult := h.validator.ValidateUser(user_id)
+	if userResult.Error != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Only customers can create orders"})
 		return
 	}
 
-	// Calculate total amount and prepare order items
-	var totalAmount float64
-	var orderItems []order_models.OrderItem
-
-	for _, item := range reqBody.Items {
-		// Get pizza size price
-		pizzaSize, err := h.pizzaSizeRepo.GetPizzaSizeByID(item.PizzaSizeID)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pizza size"})
-			return
-		}
-
-		unitPrice := pizzaSize.Price
-		pizzaFlavorList := []pizza_models.PizzaFlavor{}
-		// Get pizza flavor additional price
-		for _, flavorID := range item.FlavorIDs {
-			pizzaFlavor, err := h.pizzaFlavorRepo.GetPizzaFlavorByID(flavorID)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pizza flavor"})
-				return
-			}
-			pizzaFlavorList = append(pizzaFlavorList, pizzaFlavor)
-			unitPrice += pizzaFlavor.AdditionalPrice
-		}
-		itemTotal := unitPrice * float64(item.Quantity)
-		totalAmount += itemTotal
-
-		orderItems = append(orderItems, order_models.OrderItem{
-			PizzaSizeID: pizzaSize.ID,
-			Flavors:     pizzaFlavorList,
-			Quantity:    item.Quantity,
-			UnitPrice:   unitPrice,
-		})
+	// Validate order items and calculate total
+	orderItems, totalAmount, err := h.validator.ValidateOrderItems(reqBody.Items)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	// Create order
