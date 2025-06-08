@@ -2,9 +2,11 @@ package order_handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"divine-pizzeria-backend/constants"
 	auth_repositories "divine-pizzeria-backend/modules/auth/v1/repositories"
+	order_dtos "divine-pizzeria-backend/modules/order/v1/dtos"
 	order_helpers "divine-pizzeria-backend/modules/order/v1/helpers"
 	order_models "divine-pizzeria-backend/modules/order/v1/models"
 	order_repositories "divine-pizzeria-backend/modules/order/v1/repositories"
@@ -46,15 +48,33 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 		return
 	}
 
-	orders, err := h.orderRepo.GetAllOrders()
+	// Get query parameters
+	userID := c.Query("user_id")
+	var userIDUint uint
+	if userID != "" {
+		if id, err := strconv.ParseUint(userID, 10, 32); err == nil {
+			userIDUint = uint(id)
+		}
+	}
+
+	filter := order_dtos.OrderFilter{
+		UserID:    userIDUint,
+		Status:    c.Query("status"),
+		Sort:      c.Query("sort"),
+		StartDate: c.Query("start_date"),
+		EndDate:   c.Query("end_date"),
+		UserName:  c.Query("user_name"),
+		Email:     c.Query("email"),
+	}
+
+	orders, err := h.orderRepo.GetOrderList(filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve orders"})
 		return
 	}
 
-	// TODO: Implement order listing with user ID
-	c.JSON(200, gin.H{
-		"message": "List of orders",
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Orders retrieved successfully",
 		"orders":  orders,
 	})
 }

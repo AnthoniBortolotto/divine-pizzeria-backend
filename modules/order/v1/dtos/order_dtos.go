@@ -8,5 +8,4 @@ type OrderFilter struct {
 	EndDate   string // Optional: End date for filtering
 	UserName  string // Optional: Filter by user name
 	Email     string // Optional: Filter by user email
-
 }
