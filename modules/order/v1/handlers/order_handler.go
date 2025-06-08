@@ -2,7 +2,6 @@ package order_handlers
 
 import (
 	"net/http"
-	"strconv"
 
 	"divine-pizzeria-backend/constants"
 	auth_repositories "divine-pizzeria-backend/modules/auth/v1/repositories"
@@ -48,23 +47,23 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 		return
 	}
 
-	// Get query parameters
-	userID := c.Query("user_id")
-	var userIDUint uint
-	if userID != "" {
-		if id, err := strconv.ParseUint(userID, 10, 32); err == nil {
-			userIDUint = uint(id)
-		}
+	// Bind and validate query parameters
+	var filter order_dtos.OrderFilter
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid query parameters",
+			"message": err.Error(),
+		})
+		return
 	}
 
-	filter := order_dtos.OrderFilter{
-		UserID:    userIDUint,
-		Status:    c.Query("status"),
-		Sort:      c.Query("sort"),
-		StartDate: c.Query("start_date"),
-		EndDate:   c.Query("end_date"),
-		UserName:  c.Query("user_name"),
-		Email:     c.Query("email"),
+	validate := validator.New()
+	if err := validate.Struct(filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Validation failed",
+			"message": err.Error(),
+		})
+		return
 	}
 
 	orders, err := h.orderRepo.GetOrderList(filter)

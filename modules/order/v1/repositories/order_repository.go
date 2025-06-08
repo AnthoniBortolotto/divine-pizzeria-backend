@@ -36,21 +36,21 @@ func (r *OrderRepository) GetOrderList(filter order_dtos.OrderFilter) ([]order_m
 		query = query.Where("status = ?", filter.Status)
 	}
 	if filter.StartDate != "" {
-		query = query.Where("created_at >= ?", filter.StartDate)
+		query = query.Where("orders.created_at >= ?", filter.StartDate)
 	}
 	if filter.EndDate != "" {
-		query = query.Where("created_at <= ?", filter.EndDate)
+		query = query.Where("orders.created_at <= ?", filter.EndDate)
 	}
 
 	if filter.UserName != "" {
-		query = query.Where("users.name LIKE ?", "%"+filter.UserName+"%")
+		query = query.Where("LOWER(CONCAT(users.first_name, ' ', users.last_name)) LIKE LOWER(?)", "%"+filter.UserName+"%")
 	}
 	if filter.Email != "" {
 		query = query.Where("users.email LIKE ?", "%"+filter.Email+"%")
 	}
 
 	if filter.Sort != "" && (filter.Sort == "ASC" || filter.Sort == "DESC") {
-		query = query.Order("created_at " + filter.Sort)
+		query = query.Order("orders.created_at " + filter.Sort)
 	}
 	if err := query.Find(&orders).Error; err != nil {
 		return nil, err
