@@ -30,7 +30,10 @@ func (r *OrderRepository) GetOrderList(filter order_dtos.OrderFilter) ([]order_m
 	var orders []order_models.Order
 	query := r.db.Model(&order_models.Order{}).
 		Joins("JOIN users ON orders.user_id = users.id").
-		Preload("User")
+		Preload("User").
+		Preload("Items").
+		Preload("Items.PizzaSize").
+		Preload("Items.Flavors")
 
 	if filter.UserID != 0 {
 		query = query.Where("user_id = ?", filter.UserID)
