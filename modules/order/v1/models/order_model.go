@@ -1,6 +1,7 @@
 package order_models
 
 import (
+	auth_models "divine-pizzeria-backend/modules/auth/v1/models"
 	customer_models "divine-pizzeria-backend/modules/customer/v1/models"
 	pizza_models "divine-pizzeria-backend/modules/pizza/v1/models"
 	"time"
@@ -19,7 +20,8 @@ const (
 type Order struct {
 	ID           int                      `json:"id"`
 	UserID       uint                     `json:"user_id"`
-	Customer     customer_models.Customer `json:"customer" gorm:"-"` // We'll populate this manually for JSON responses
+	User         auth_models.User         `json:"-" gorm:"foreignKey:UserID"`
+	Customer     customer_models.Customer `json:"customer" gorm:"-"` // Virtual field for JSON response
 	DeliveryDate *time.Time               `json:"delivery_date"`
 	Status       OrderStatus              `json:"status"`
 	TotalPrice   float64                  `json:"total_price"`

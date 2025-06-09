@@ -1,6 +1,7 @@
 package order_repositories
 
 import (
+	customer_models "divine-pizzeria-backend/modules/customer/v1/models"
 	order_dtos "divine-pizzeria-backend/modules/order/v1/dtos"
 	order_models "divine-pizzeria-backend/modules/order/v1/models"
 
@@ -27,7 +28,9 @@ func (r *OrderRepository) GetAllOrders() ([]order_models.Order, error) {
 
 func (r *OrderRepository) GetOrderList(filter order_dtos.OrderFilter) ([]order_models.Order, error) {
 	var orders []order_models.Order
-	query := r.db.Model(&order_models.Order{}).Joins("JOIN users ON orders.user_id = users.id")
+	query := r.db.Model(&order_models.Order{}).
+		Joins("JOIN users ON orders.user_id = users.id").
+		Preload("User")
 
 	if filter.UserID != 0 {
 		query = query.Where("user_id = ?", filter.UserID)
@@ -55,6 +58,18 @@ func (r *OrderRepository) GetOrderList(filter order_dtos.OrderFilter) ([]order_m
 	if err := query.Find(&orders).Error; err != nil {
 		return nil, err
 	}
+
+	// Map User data to Customer field
+	for i := range orders {
+		orders[i].Customer = customer_models.Customer{
+			FirstName:   orders[i].User.FirstName,
+			LastName:    orders[i].User.LastName,
+			Email:       orders[i].User.Email,
+			PhoneNumber: orders[i].User.PhoneNumber,
+			Address:     orders[i].User.Address,
+		}
+	}
+
 	return orders, nil
 }
 
