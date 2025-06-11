@@ -1,6 +1,7 @@
 package order_handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"divine-pizzeria-backend/constants"
@@ -128,5 +129,70 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Order created successfully",
 		"order":   newOrder,
+	})
+}
+
+func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
+	_, hasPermission := h.helpers.ValidateUserPermission(c, constants.ADMIN_ROLE_ID)
+
+	if !hasPermission {
+		return
+	}
+
+	orderIDStr := c.Param("id")
+	if orderIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Order ID is required",
+		})
+		return
+	}
+
+	var orderID int
+	if _, err := fmt.Sscanf(orderIDStr, "%d", &orderID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid order ID format",
+		})
+		return
+	}
+
+	var updateRequest order_models.OrderUpdate
+	if err := c.ShouldBindJSON(&updateRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request body",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(updateRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Validation failed",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// Get the order first to ensure it exists
+	order, err := h.orderRepo.GetOrderByID(orderID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Order not found",
+		})
+		return
+	}
+
+	// Update the order status
+	order.Status = updateRequest.Status
+	_, err = h.orderRepo.UpdateOrder(order)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to update order status",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Order status updated successfully",
 	})
 }

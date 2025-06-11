@@ -18,6 +18,7 @@ func RegisterOrderRoutes(router *gin.RouterGroup, db *gorm.DB) {
 		{
 			order.GET("/", h.ListOrders)
 			order.POST("/", h.CreateOrder)
+			order.PUT("/:id", h.UpdateOrderStatus)
 		}
 	}
 }

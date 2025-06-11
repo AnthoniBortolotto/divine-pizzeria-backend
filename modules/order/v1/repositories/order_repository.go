@@ -90,10 +90,18 @@ func (r *OrderRepository) CreateOrder(order order_models.Order) (*order_models.O
 	}
 	return &order, nil
 }
+
 func (r *OrderRepository) GetOrderByID(id int) (*order_models.Order, error) {
 	var order order_models.Order
 	if err := r.db.First(&order, id).Error; err != nil {
 		return nil, err
 	}
 	return &order, nil
+}
+
+func (r *OrderRepository) UpdateOrder(order *order_models.Order) (*order_models.Order, error) {
+	if err := r.db.Save(order).Error; err != nil {
+		return nil, err
+	}
+	return order, nil
 }
